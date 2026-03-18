@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Order Processing System: Parallel Payment & Shipping with Step Functions
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+    MemorySize: 128
+    Environment:
+      Variables:
+        ORDERS_TABLE: !Ref OrdersTable
+
+Resources:
+  OrdersTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: orderId
+        Type: String
+
+  OrderStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: statemachine/orderProcess.asl.json
+      DefinitionSubstitutions:
+        PaymentFunctionArn: !GetAtt PaymentFunction.Arn
+        ShippingFunctionArn: !GetAtt ShippingFunction.Arn
+        CompleteOrderFunctionArn: !GetAtt CompleteOrderFunction.Arn
+        CancelOrderFunctionArn: !GetAtt CancelOrderFunction.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PaymentFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ShippingFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CompleteOrderFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CancelOrderFunction
+
+  CreateOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/lambdas/createOrder.handler
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref OrderStateMachine
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt OrderStateMachine.Name
+      Events:
+        CreateOrderApi:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: post
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/lambdas/createOrder.ts
+
+  PaymentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/lambdas/payment.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/lambdas/payment.ts
+
+  ShippingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/lambdas/shipping.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/lambdas/shipping.ts
+
+  CompleteOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/lambdas/completeOrder.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/lambdas/completeOrder.ts
+
+  CancelOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/lambdas/cancelOrder.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+      Events:
+        CancelOrderApi:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: delete
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/lambdas/cancelOrder.ts
+
+Outputs:
+  OrderApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/orders"
+  StateMachineArn:
+    Description: "Order State Machine ARN"
+    Value: !Ref OrderStateMachine

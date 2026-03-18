@@ -1,0 +1,26 @@
+{
+  "name": "aws-order-app",
+  "version": "1.0.0",
+  "description": "E-commerce order processing with Step Functions",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.130",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.x",
+    "aws-sdk-client-mock": "^4.1.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.500.0",
+    "@aws-sdk/client-sfn": "^3.500.0",
+    "@aws-sdk/lib-dynamodb": "^3.500.0",
+    "esbuild": "^0.20.0"
+  },
+  "scripts": {
+    "build": "sam build",
+    "deploy": "sam deploy",
+    "test": "jest"
+  }
+}

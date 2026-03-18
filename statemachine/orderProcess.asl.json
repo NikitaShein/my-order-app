@@ -1,0 +1,60 @@
+{
+  "StartAt": "ParallelProcessing",
+  "States": {
+    "ParallelProcessing": {
+      "Type": "Parallel",
+      "Next": "FinalizeOrder",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "CancelOrder"
+        }
+      ],
+      "Branches": [
+        {
+          "StartAt": "ProcessPayment",
+          "States": {
+            "ProcessPayment": {
+              "Type": "Task",
+              "Resource": "${PaymentFunctionArn}",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "ProcessShipping",
+          "States": {
+            "ProcessShipping": {
+              "Type": "Task",
+              "Resource": "${ShippingFunctionArn}",
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "FinalizeOrder": {
+      "Type": "Task",
+      "Resource": "${CompleteOrderFunctionArn}",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "CancelOrder"
+        }
+      ],
+      "End": true
+    },
+    "CancelOrder": {
+      "Type": "Task",
+      "Resource": "${CancelOrderFunctionArn}",
+      "Next": "OrderFailed"
+    },
+    "OrderFailed": {
+      "Type": "Fail",
+      "Error": "OrderFailed",
+      "Cause": "Order failed due to workflow failure"
+    }
+  }
+}

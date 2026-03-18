@@ -1,0 +1,29 @@
+# Node / dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+.aws-sam/
+dist/
+build/
+
+# Test / coverage
+coverage/
+
+# Environment variables
+.env
+.env.*
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+
+# TypeScript incremental build
+*.tsbuildinfo
+
+# SAM / Serverless caches (just in case)
+.serverless/
+
