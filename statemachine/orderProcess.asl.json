@@ -18,6 +18,19 @@
             "ProcessPayment": {
               "Type": "Task",
               "Resource": "${PaymentFunctionArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
               "End": true
             }
           }
@@ -28,6 +41,19 @@
             "ProcessShipping": {
               "Type": "Task",
               "Resource": "${ShippingFunctionArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
               "End": true
             }
           }
@@ -37,6 +63,18 @@
     "FinalizeOrder": {
       "Type": "Task",
       "Resource": "${CompleteOrderFunctionArn}",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2.0
+        }
+      ],
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -49,6 +87,16 @@
     "CancelOrder": {
       "Type": "Task",
       "Resource": "${CancelOrderFunctionArn}",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 2
+        }
+      ],
       "Next": "OrderFailed"
     },
     "OrderFailed": {

@@ -26,7 +26,9 @@ const extractOrderId = (event: any): string | undefined => {
 
 export const handler = async (
   event: any
-): Promise<APIGatewayProxyResult | { orderId: string; finalStatus: string }> => {
+): Promise<
+  APIGatewayProxyResult | { orderId: string; finalStatus: string }
+> => {
   const orderId = extractOrderId(event);
 
   if (!orderId) {
@@ -36,8 +38,7 @@ export const handler = async (
   const params = {
     TableName: process.env.ORDERS_TABLE,
     Key: { orderId },
-    UpdateExpression:
-      "SET #s = :status, cancelledAt = :cancelledAt",
+    UpdateExpression: "SET #s = :status, cancelledAt = :cancelledAt",
     ExpressionAttributeNames: {
       "#s": "status",
     },
@@ -45,6 +46,7 @@ export const handler = async (
       ":status": OrderStatus.CANCELLED,
       ":cancelledAt": new Date().toISOString(),
     },
+    ConditionExpression: "attribute_exists(orderId)",
   };
 
   await docClient.send(new UpdateCommand(params));
